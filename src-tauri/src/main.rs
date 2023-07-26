@@ -3,7 +3,7 @@
 
 use std::fs;
 
-use tauri::async_runtime::Mutex;
+use tauri::{async_runtime::Mutex, Manager};
 
 mod album;
 mod state;
@@ -24,6 +24,11 @@ fn main() {
     tauri::Builder::default()
         .manage(state::State {
             albums: Mutex::new(album::AlbumMap::new()),
+        })
+        .setup(|app|{
+            let win = app.get_window("main").unwrap();
+            win.set_decorations(false).unwrap();
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![greet, readdir])
         .run(tauri::generate_context!())

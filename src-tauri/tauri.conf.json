@@ -12,6 +12,12 @@
   },
   "tauri": {
     "allowlist": {
+      "protocol": {
+          
+        "all": false,
+        "asset": true,
+        "assetScope": ["**"]
+      },
       "fs": {
         "readDir": true
       },
@@ -19,7 +25,19 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "window": {
+        "all": false,
+        "close": true,
+        "hide": true,
+        "show": true,
+        "maximize": true,
+        "minimize": true,
+        "unmaximize": true,
+        "unminimize": true,
+        "startDragging": true
       }
+
     },
     "bundle": {
       "active": true,
@@ -34,7 +52,7 @@
       ]
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost"
     },
     "windows": [
       {
