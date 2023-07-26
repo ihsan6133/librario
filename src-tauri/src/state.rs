@@ -2,6 +2,8 @@
 
 use tauri::async_runtime::Mutex;
 
+use crate::album::AlbumMap;
+
 pub struct State {
-    pub name: Mutex<String>
+    pub albums: Mutex<AlbumMap>,
 }
