@@ -25,11 +25,6 @@ fn main() {
         .manage(state::State {
             albums: Mutex::new(album::AlbumMap::new()),
         })
-        .setup(|app|{
-            let win = app.get_window("main").unwrap();
-            win.set_decorations(false).unwrap();
-            Ok(())
-        })
         .invoke_handler(tauri::generate_handler![greet, readdir])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

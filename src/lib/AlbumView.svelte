@@ -10,7 +10,7 @@
       String.raw`D:\Media\Pictures\Old\pictures 660.jpg`,
     ] 
 
-    $: thumbnails = thumbnails.map((path)=> convertFileSrc(path))
+    thumbnails = thumbnails.map((path)=> convertFileSrc(path))
 </script>
 
 <div class="grid" >

@@ -56,6 +56,8 @@
     },
     "windows": [
       {
+        "transparent": true,
+        "decorations": false,
         "fullscreen": false,
         "resizable": true,
         "title": "librario",

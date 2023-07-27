@@ -1,9 +1,9 @@
 <script lang="ts">
   import AlbumView from "./lib/AlbumView.svelte";
-  import TitleBar from "./lib/TitleBar.svelte";
+  import WindowsTitleBar from "./lib/WindowsTitleBar.svelte";
 </script>
 
 <main class="container">
-  <TitleBar/>
+  <WindowsTitleBar/>
   <AlbumView/>
 </main>

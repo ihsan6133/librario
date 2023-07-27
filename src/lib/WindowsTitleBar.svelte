@@ -20,7 +20,7 @@
     appWindow.onResized(({payload: size})=>{
         appWindow.isMaximized().then(v => {maximized = v})
     })
-    
+
     let maximized = false;
     appWindow.isMaximized().then(v => {maximized = v})
 </script>
@@ -92,6 +92,7 @@
         border: 0;
         outline: 0;
         background: transparent;
+        transition-duration: 0.2s;
     }
     .button svg {
         width: 10px;
