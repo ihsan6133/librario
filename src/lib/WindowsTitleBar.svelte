@@ -26,17 +26,17 @@
 </script>
 
 <div data-tauri-drag-region class="flex" >
-    <div data-tauri-drag-region class="title-container">
-        <img data-tauri-drag-region src="{AppIcon}" alt="" class="icon">
+    <div class="title-container">
+        <img src="{AppIcon}" alt="" class="icon">
         <div data-tauri-drag-region class="title">
             {title}
         </div>
     </div>
     <div class="button-container">
-        <button class="button minimize" on:click={appWindow.minimize}>
+        <button class="button minimize" on:click={appWindow.minimize} title="Minimize">
             <svg x="0px" y="0px" viewBox="0 0 10.2 1"><rect x="0" y="50%" width="10.2" height="1" /></svg>
         </button>
-        <button class="button maximize" on:click={appWindow.toggleMaximize}>
+        <button class="button maximize" on:click={appWindow.toggleMaximize} title="Maximize">
             {#if maximized}
                 <svg width="10" height="10" viewBox="0 0 10 10">    
                     <path fill="#000" d="M1.667 0v1.667H2.5V.833h6.667V7.5h-.834v.833H10V0H1.667Z"/>
@@ -47,7 +47,7 @@
             {/if}
             
         </button>
-        <button class="button close" on:click={appWindow.close}>
+        <button class="button close" on:click={appWindow.close} title="Close">
             <svg viewBox="0 0 10 10"><polygon points="10.2,0.7 9.5,0 5.1,4.4 0.7,0 0,0.7 4.4,5.1 0,9.5 0.7,10.2 5.1,5.8 9.5,10.2 10.2,9.5 5.8,5.1" /></svg>
         </button>
     </div>

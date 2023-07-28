@@ -1,9 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::fs;
+use std::{fs, collections::HashMap, sync::Arc, time::Duration, ops::DerefMut};
 
-use tauri::{async_runtime::Mutex, Manager};
+use album::{Album, AlbumMap};
+use state::State;
+use tauri::async_runtime::{Mutex, self};
+use uuid::Uuid;
 
 mod album;
 mod state;
@@ -13,6 +16,7 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+
 #[tauri::command]
 async fn readdir(path: &str) -> Result<Vec<String>, String> {
     Ok(fs::read_dir(path)
@@ -20,12 +24,36 @@ async fn readdir(path: &str) -> Result<Vec<String>, String> {
         .filter_map(|e| Some(e.ok()?.file_name().to_str()?.to_string()))
         .collect())
 }
-fn main() {
+
+#[tauri::command]
+async fn long_function(state: tauri::State<'_, State>) -> Result<(), String> {
+    let mutex = state.wait_handle.as_ref().unwrap();
+    let mut guard = mutex.lock().await;
+    let future = guard.deref_mut();
+
+    tokio::try_join!(future).expect("FFF");
+    
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    
+    let mut state = State::new();
+    
+    {
+        state.wait_handle = Some(Mutex::new(
+            tauri::async_runtime::spawn(async{
+                std::thread::sleep(Duration::from_secs(10));
+                println!("Finised!");
+            })
+        ))
+ 
+    }
+
     tauri::Builder::default()
-        .manage(state::State {
-            albums: Mutex::new(album::AlbumMap::new()),
-        })
-        .invoke_handler(tauri::generate_handler![greet, readdir])
+        .manage(state)
+        .invoke_handler(tauri::generate_handler![greet, readdir, long_function])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

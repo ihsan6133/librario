@@ -56,7 +56,7 @@
     },
     "windows": [
       {
-        "transparent": true,
+        "transparent": false,
         "decorations": false,
         "fullscreen": false,
         "resizable": true,

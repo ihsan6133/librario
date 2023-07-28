@@ -3,10 +3,7 @@
   font-size: 16px;
   line-height: 24px;
   font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
+  
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,16 +16,21 @@ html {
   max-height: 100%;
 }
 body {
-  height: 100%;
-  max-height: 100%;
-  margin: 0  1px 1px 0;
+  height: calc(100% - 1px);
+  max-height: calc(100% - 1px);
+  width: calc(100% - 1px);
+  margin: 0;  
+
   box-sizing: border-box;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
+
+  color: #0f0f0f;
+  background-color: #f6f6f6;
   
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  body {
     color: #f6f6f6;
     background-color: #2f2f2f;
   }
