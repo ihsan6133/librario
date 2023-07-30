@@ -1,7 +1,7 @@
 <script lang="ts">
     import { convertFileSrc, invoke } from '@tauri-apps/api/tauri';
     import { fs, path } from '@tauri-apps/api';
-
+    
     
     import { lazyLoad } from './lazyLoad';
     import { BaseDirectory } from '@tauri-apps/api/path';
@@ -10,7 +10,7 @@
     let long_func = invoke("long_function");
 
     async function imagePath(id: string) {
-      const appDataPath: string = await path.appDataDir();
+      const appDataPath: string = await path.dataDir();
       const thumbnailPath: string = await path.join("thumbnails", `${id}.webp`);
 
       if (await fs.exists(thumbnailPath, {dir: BaseDirectory.AppData})) {
@@ -37,7 +37,10 @@
     {:then albums} 
       {#each Object.entries(albums) as [id, album]}
         <div class="album">
-          <img use:loadThumbnail={id} alt="">        
+          <img use:loadThumbnail={id} alt="">
+          <div class="album-details">
+            <div class="album-name">{album.name}</div>        
+          </div>
         </div>
       {/each}
     {/await}

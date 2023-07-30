@@ -67,6 +67,7 @@ async fn main() {
                 map
             })
         ))
+        
     }
 
     tauri::Builder::default()
