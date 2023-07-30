@@ -1,24 +1,47 @@
 <script lang="ts">
-    import {convertFileSrc} from '@tauri-apps/api/tauri';
+    import { convertFileSrc, invoke } from '@tauri-apps/api/tauri';
+    import { fs, path } from '@tauri-apps/api';
+
+    
     import { lazyLoad } from './lazyLoad';
+    import { BaseDirectory } from '@tauri-apps/api/path';
 
+    
+    let long_func = invoke("long_function");
 
-    let path = convertFileSrc("D:\\Media\\Pictures\\errorhypixe;.png")
-    let thumbnails = [
-      String.raw`D:\Media\Pictures\wallpaper-park-ipad.jpg`,
-      String.raw`D:\Media\Pictures\DonutRender.png`,
-      String.raw`D:\Media\Pictures\Old\pictures 660.jpg`,
-    ] 
+    async function imagePath(id: string) {
+      const appDataPath: string = await path.appDataDir();
+      const thumbnailPath: string = await path.join("thumbnails", `${id}.webp`);
 
-    thumbnails = thumbnails.map((path)=> convertFileSrc(path))
+      if (await fs.exists(thumbnailPath, {dir: BaseDirectory.AppData})) {
+        return await path.join(appDataPath, "thumbnails", `${id}.webp`);
+      } else {
+        return null;
+      }
+
+    }
+
+    function loadThumbnail(image: HTMLImageElement, id: string) {
+      imagePath(id).then(path=>{
+        if (path === null) {
+          lazyLoad(image, path); 
+        }
+      })
+    }
+
 </script>
 
 <div class="grid" >
-    {#each thumbnails as thumbnail}
-      <div class="album">
-        <img use:lazyLoad={thumbnail}  alt="">
-      </div>
-    {/each}    
+    {#await long_func}
+      Loading
+    {:then albums} 
+      {#each Object.entries(albums) as [id, album]}
+        <div class="album">
+          <img use:loadThumbnail={id} alt="">        
+        </div>
+      {/each}
+    {/await}
+
 </div>
 
 
@@ -31,14 +54,20 @@
     }
   
     .album {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
       width: 100%;
       height: 100%;
       aspect-ratio: 1;
       background-color: gray;
       border-radius: 15px;
-
-
     }
+    .album-name {
+      color: black;
+    }
+
     .album img{
       border-radius: inherit;
       display: block;

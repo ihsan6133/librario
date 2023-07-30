@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, collections::HashMap, sync::Arc, time::Duration, ops::DerefMut};
+use std::{fs, collections::HashMap, sync::Arc, time::Duration, ops::{DerefMut, Deref}};
 
 use album::{Album, AlbumMap};
 use state::State;
@@ -26,14 +26,27 @@ async fn readdir(path: &str) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-async fn long_function(state: tauri::State<'_, State>) -> Result<(), String> {
+async fn long_function(state: tauri::State<'_, State>) -> Result<AlbumMap, String> {
+    if  let Some(album_map) = state.album_map.lock().await.deref() {
+        return Ok(album_map.clone())
+    } 
+
+
     let mutex = state.wait_handle.as_ref().unwrap();
     let mut guard = mutex.lock().await;
     let future = guard.deref_mut();
 
-    tokio::try_join!(future).expect("FFF");
+    let (album_map,) = tokio::join!(future);
+    let album_map = album_map.expect("Failed to unwrap album_map");
+
+    let mut state_map = state.album_map.lock().await;
     
-    Ok(())
+    let clone = album_map.clone();
+    
+    *state_map = Some(album_map);
+
+
+    Ok(clone)
 }
 
 #[tokio::main]
@@ -45,10 +58,15 @@ async fn main() {
         state.wait_handle = Some(Mutex::new(
             tauri::async_runtime::spawn(async{
                 std::thread::sleep(Duration::from_secs(10));
-                println!("Finised!");
+                println!("Finished!");
+                let mut map = AlbumMap::new();
+                map.insert(Uuid::new_v4().to_string(), Album::new("Georgia"));
+                map.insert(Uuid::new_v4().to_string(), Album::new("USA"));
+                map.insert(Uuid::new_v4().to_string(), Album::new("Holidays"));
+                map.insert(Uuid::new_v4().to_string(), Album::new("Paris"));
+                map
             })
         ))
- 
     }
 
     tauri::Builder::default()

@@ -18,8 +18,12 @@
         "asset": true,
         "assetScope": ["**"]
       },
+      "path": {
+        "all": true
+      },
       "fs": {
-        "readDir": true
+        "exists": true,
+        "scope": ["$APPDATA/**"]
       },
       "all": false,
       "shell": {

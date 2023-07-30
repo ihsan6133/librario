@@ -7,5 +7,5 @@
 <main class="container">
   <WindowsTitleBar/>
   <AlbumView/>
-  <TestAwait/>
+
 </main>

@@ -1,5 +1,5 @@
 use std::{collections::HashMap, io};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 pub enum Error {
@@ -28,11 +28,27 @@ impl From<toml::ser::Error> for Error {
 
 pub type AlbumMap = HashMap<String, Album>;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Album {
-    pub name: String,
-    pub keywords: Option<Vec<String>>,
-    pub people: Option<Vec<String>>,
+    name: String,
+    keywords: Option<Vec<String>>,
+    people: Option<Vec<String>>,
+}
+
+impl Album {
+    pub fn new(name: &str) -> Album {
+        Album { name: name.to_string(), keywords: None, people: None }
+    }
+
+    pub fn with_keywords(mut self, keywords: &[String]) -> Album {
+        self.keywords = Some(keywords.to_vec());
+        self
+    }
+
+    pub fn with_people(mut self, keywords: &[String]) -> Album {
+        self.people = Some(keywords.to_vec());
+        self
+    }
 }
 
 /// Loads albums from a toml file and returns an AlbumMap
