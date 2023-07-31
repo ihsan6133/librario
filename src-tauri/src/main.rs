@@ -1,11 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, collections::HashMap, sync::Arc, time::Duration, ops::{DerefMut, Deref}};
+use std::{fs, collections::HashMap, sync::Arc, time::Duration, ops::{DerefMut, Deref}, borrow::BorrowMut, io, path::Path};
 
 use album::{Album, AlbumMap};
 use state::State;
-use tauri::async_runtime::{Mutex, self};
+use tauri::{async_runtime::{Mutex, self, spawn_blocking}, Manager};
 use uuid::Uuid;
 
 mod album;
@@ -49,29 +49,50 @@ async fn long_function(state: tauri::State<'_, State>) -> Result<AlbumMap, Strin
     Ok(clone)
 }
 
+fn mkdir_if_not_exists(path: &Path) -> Result<(), io::Error> {
+    if !path.try_exists()? {
+        fs::create_dir_all(path)?;
+    }
+    Ok(())
+}
+
+
 #[tokio::main]
 async fn main() {
     
-    let mut state = State::new();
     
-    {
-        state.wait_handle = Some(Mutex::new(
-            tauri::async_runtime::spawn(async{
-                std::thread::sleep(Duration::from_secs(10));
-                println!("Finished!");
-                let mut map = AlbumMap::new();
-                map.insert(Uuid::new_v4().to_string(), Album::new("Georgia"));
-                map.insert(Uuid::new_v4().to_string(), Album::new("USA"));
-                map.insert(Uuid::new_v4().to_string(), Album::new("Holidays"));
-                map.insert(Uuid::new_v4().to_string(), Album::new("Paris"));
-                map
-            })
-        ))
-        
-    }
-
+    
     tauri::Builder::default()
-        .manage(state)
+        .setup(|app|{
+
+            let app_data_dir  = app.path_resolver().app_data_dir().expect("Failed to query app data directory");
+            let app_cache_dir = app.path_resolver().app_cache_dir().expect("Failed to query app cache directory");
+
+            if let Err(e) = mkdir_if_not_exists(&app_data_dir) {
+                println!("Failed to create app data directory {}: {}", app_data_dir.display(), e);
+            }
+
+            if let Err(e) = mkdir_if_not_exists(&app_cache_dir) {
+                println!("Failed to create app cache directory {}: {}", app_cache_dir.display(), e);
+            }
+
+            let mut state = State::new();
+            state.wait_handle = Some(Mutex::new(
+                tauri::async_runtime::spawn(async move {
+                    let album_path = app_data_dir.join("albums.toml");
+                    match album::load_albums(&album_path).await {
+                        Ok(album_map) => album_map,
+                        Err(e) => {
+                            println!("Error occured while loading albums: {e}");
+                            AlbumMap::new()
+                        }
+                    }
+                })
+            ));
+                
+            app.manage(state);
+            Ok(())      
+        })
         .invoke_handler(tauri::generate_handler![greet, readdir, long_function])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
