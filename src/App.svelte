@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AlbumImageView from "./lib/AlbumImageView.svelte";
   import AlbumView from "./lib/AlbumView.svelte";
   import WindowsTitleBar from "./lib/WindowsTitleBar.svelte";
 
@@ -10,20 +11,39 @@
     hasBorder = await appWindow.isMaximized() ? false : true;
   });
 
+  const state = {
+    albumId: null
+  }
+
+  function selectAlbum(event: CustomEvent<{id: string}>) {
+    state.albumId = event.detail.id;
+    console.log(state.albumId);
+  }
+
+
 
 </script>
 
 <main class="container" class:has-border={hasBorder}>
   <WindowsTitleBar/>
-  <AlbumView/>
+
+  {#if state.albumId === null}
+    <AlbumView on:selectalbum={selectAlbum}/>
+  {:else}
+    <AlbumImageView id={state.albumId}/>
+  {/if}
+
 </main>
 
 <style>
+
   /*container should be full height and width of window, minus 1 px because of a tauri bug.*/
   .container {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
   }
   
   .has-border {

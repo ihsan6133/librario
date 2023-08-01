@@ -44,16 +44,17 @@ impl std::error::Error for Error {}
 
 pub type AlbumMap = HashMap<String, Album>;
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Album {
-    name: String,
-    keywords: Option<Vec<String>>,
-    people: Option<Vec<String>>,
+    pub name: String,
+    pub keywords: Option<Vec<String>>,
+    pub people: Option<Vec<String>>,
+    pub path: Option<String>,
 }
 
 impl Album {
     pub fn new(name: &str) -> Album {
-        Album { name: name.to_string(), keywords: None, people: None }
+        Album { name: name.to_string(), keywords: None, people: None, path: None }
     }
 
     pub fn with_keywords(mut self, keywords: &[String]) -> Album {

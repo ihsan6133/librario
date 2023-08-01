@@ -10,7 +10,7 @@ let options = {
 export const lazyLoad = (image, src) => {
     const loaded = () => {
         //image.classList.add('visible')                          // doesn't work in REPL
-			  image.style.opacity = "1"                                 // REPL hack to apply loading animation
+		image.style.opacity = "1"                                 // REPL hack to apply loading animation
     }
     const observer = new IntersectionObserver(entries => {
         if (entries[0].isIntersecting) {

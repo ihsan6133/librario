@@ -26,7 +26,7 @@ async fn readdir(path: &str) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-async fn long_function(state: tauri::State<'_, State>) -> Result<AlbumMap, String> {
+async fn list_albums(state: tauri::State<'_, State>) -> Result<AlbumMap, String> {
     if  let Some(album_map) = state.album_map.lock().await.deref() {
         return Ok(album_map.clone())
     } 
@@ -49,6 +49,40 @@ async fn long_function(state: tauri::State<'_, State>) -> Result<AlbumMap, Strin
     Ok(clone)
 }
 
+#[tauri::command]
+async fn query_album(id: &str, state: tauri::State<'_, State>) -> Result<Album, String> {
+  let album_map = state.album_map.lock().await;
+  let album_map = album_map.deref();
+  let album = album_map.as_ref().unwrap().get(id).ok_or("Album not found")?;
+
+  Ok(album.clone())
+}
+
+#[tauri::command]
+async fn query_album_files(id: &str, state: tauri::State<'_, State>) -> Result<Vec<String>, String> {
+    let album = {
+        let map = state.album_map.lock().await;
+        let album = map.deref().as_ref().unwrap().get(id);
+        album.ok_or("Album not found")?.clone()
+    };
+
+    let Some(path) = album.path else { return Ok(vec![]) };
+
+    let mut iter = tokio::fs::read_dir(path).await.map_err(|e| e.to_string())?;
+    let mut files = Vec::new();
+
+    loop {
+        let Ok(entry) = iter.next_entry().await.map_err(|e| e.to_string()) else { continue };
+        let Some(entry) = entry else { break };
+        let filename = entry.file_name();
+        let Some(filename) = filename.to_str() else {continue};
+        let filename = filename.to_string();
+        files.push(filename);
+    }
+
+    Ok(files)
+}
+
 fn mkdir_if_not_exists(path: &Path) -> Result<(), io::Error> {
     if !path.try_exists()? {
         fs::create_dir_all(path)?;
@@ -59,9 +93,6 @@ fn mkdir_if_not_exists(path: &Path) -> Result<(), io::Error> {
 
 #[tokio::main]
 async fn main() {
-    
-    
-    
     tauri::Builder::default()
         .setup(|app|{
 
@@ -80,20 +111,22 @@ async fn main() {
             state.wait_handle = Some(Mutex::new(
                 tauri::async_runtime::spawn(async move {
                     let album_path = app_data_dir.join("albums.toml");
-                    match album::load_albums(&album_path).await {
+                    let albums = match album::load_albums(&album_path).await {
                         Ok(album_map) => album_map,
                         Err(e) => {
                             println!("Error occured while loading albums: {e}");
                             AlbumMap::new()
                         }
-                    }
+                    };
+                    println!("{albums:#?}");
+                    albums
                 })
             ));
                 
             app.manage(state);
             Ok(())      
         })
-        .invoke_handler(tauri::generate_handler![greet, readdir, long_function])
+        .invoke_handler(tauri::generate_handler![greet, readdir, list_albums, query_album])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

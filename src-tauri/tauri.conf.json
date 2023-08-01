@@ -22,7 +22,7 @@
       },
       "fs": {
         "exists": true,
-        "scope": ["$APPDATA/**"]
+        "scope": ["$APPDATA/**", "$APPCACHE/**"]
       },
       "all": false,
       "shell": {

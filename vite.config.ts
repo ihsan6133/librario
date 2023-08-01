@@ -11,7 +11,7 @@ export default defineConfig(async () => ({
           typescript: true,
         }),
       ],
-    }),
+    })
   ],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
