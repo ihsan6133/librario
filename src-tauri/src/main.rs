@@ -66,7 +66,7 @@ async fn query_album_files(id: &str, state: tauri::State<'_, State>) -> Result<V
         album.ok_or("Album not found")?.clone()
     };
 
-    let Some(path) = album.path else { return Ok(vec![]) };
+    let Some(path) = album.path else { return Err("No directory linked to album".to_string()) };
 
     let mut iter = tokio::fs::read_dir(path).await.map_err(|e| e.to_string())?;
     let mut files = Vec::new();
@@ -126,7 +126,7 @@ async fn main() {
             app.manage(state);
             Ok(())      
         })
-        .invoke_handler(tauri::generate_handler![greet, readdir, list_albums, query_album])
+        .invoke_handler(tauri::generate_handler![greet, readdir, list_albums, query_album, query_album_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
