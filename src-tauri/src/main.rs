@@ -1,11 +1,13 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, collections::HashMap, sync::Arc, time::Duration, ops::{DerefMut, Deref}, borrow::BorrowMut, io, path::Path};
+use std::{fs, collections::HashMap, sync::Arc, time::Duration, ops::{DerefMut, Deref}, borrow::BorrowMut, io, path::{Path, PathBuf}};
 
 use album::{Album, AlbumMap};
+use image::imageops::FilterType;
 use state::State;
-use tauri::{async_runtime::{Mutex, self, spawn_blocking}, Manager};
+use tauri::{async_runtime::{Mutex, self, spawn_blocking}, Manager, AppHandle, Window};
+use tokio::{task::JoinHandle};
 use uuid::Uuid;
 
 mod album;
@@ -83,6 +85,47 @@ async fn query_album_files(id: &str, state: tauri::State<'_, State>) -> Result<V
     Ok(files)
 }
 
+#[tauri::command]
+async fn start_thumbnail_generation(id: &str) {
+
+}
+
+#[tauri::command]
+async fn generate_thumbnail(app: AppHandle, id: &str, filename: &str, state: tauri::State<'_, State>) -> Result<String, String> {
+    
+    let thumb_path = app.path_resolver().app_cache_dir().expect("Failed to query app cache directory").join("thumbs").join(id).join(std::format!("{filename}.webp"));
+    
+    if thumb_path.try_exists().map_err(|e|e.to_string())? {
+        return Ok(thumb_path.to_str().unwrap().to_string());
+    }
+    
+    
+    let permit = state.thumbnail_semapohore.clone().acquire_owned().await.map_err(|e|e.to_string())?;
+    let path = {
+        let map = state.album_map.lock().await;
+        let album = map.deref().as_ref().unwrap().get(id);
+        let album = album.ok_or("Album not found")?;
+        
+        let path = album.path.as_ref().ok_or("No directory linked to album")?.clone();
+        let path = PathBuf::from(path);
+        path.join(filename)
+    };
+    
+    mkdir_if_not_exists(app.path_resolver().app_cache_dir().expect("Failed to query app cache directory").join("thumbs").join(id).as_path()).unwrap();
+    
+    println!("src: {}\ndst: {}", path.display(), thumb_path.display());
+    
+    let task: tauri::async_runtime::JoinHandle<Result<String, _>> = spawn_blocking(move ||{
+        let image = image::open(&path).map_err(|e|e.to_string())?;
+        image.resize(280, 280, FilterType::Triangle).save_with_format(&thumb_path, image::ImageFormat::WebP).expect("Failed to write image");
+        drop(permit);
+        Ok(thumb_path.to_str().unwrap().to_string())
+    });
+
+    task.await.map_err(|e|e.to_string())?
+}
+
+
 fn mkdir_if_not_exists(path: &Path) -> Result<(), io::Error> {
     if !path.try_exists()? {
         fs::create_dir_all(path)?;
@@ -98,6 +141,7 @@ async fn main() {
 
             let app_data_dir  = app.path_resolver().app_data_dir().expect("Failed to query app data directory");
             let app_cache_dir = app.path_resolver().app_cache_dir().expect("Failed to query app cache directory");
+            let thumbs_dir = app_cache_dir.join("thumbs");
 
             if let Err(e) = mkdir_if_not_exists(&app_data_dir) {
                 println!("Failed to create app data directory {}: {}", app_data_dir.display(), e);
@@ -107,6 +151,11 @@ async fn main() {
                 println!("Failed to create app cache directory {}: {}", app_cache_dir.display(), e);
             }
 
+            
+            if let Err(e) = mkdir_if_not_exists(&thumbs_dir) {
+                println!("Failed to create thumbnail directory {}: {}", thumbs_dir.display(), e);
+            }
+            println!("{}", thumbs_dir.display());
             let mut state = State::new();
             state.wait_handle = Some(Mutex::new(
                 tauri::async_runtime::spawn(async move {
@@ -126,7 +175,7 @@ async fn main() {
             app.manage(state);
             Ok(())      
         })
-        .invoke_handler(tauri::generate_handler![greet, readdir, list_albums, query_album, query_album_files])
+        .invoke_handler(tauri::generate_handler![greet, readdir, list_albums, query_album, query_album_files, generate_thumbnail])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

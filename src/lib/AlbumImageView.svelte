@@ -1,7 +1,9 @@
 <!--For each individual album-->
 <script lang="ts">
-    import { invoke } from "@tauri-apps/api";
-
+    import { fs, invoke, path } from "@tauri-apps/api";
+    import { BaseDirectory } from "@tauri-apps/api/path";
+    import { convertFileSrc } from "@tauri-apps/api/tauri";
+    import { loadThumbnail } from "./loadThumbnail";
     export let id: string;
 
     let query_album: Promise<any> = invoke('query_album', {id});
@@ -26,7 +28,9 @@
             Loading
         {:then files} 
             {#each files as file}
-                {file}
+                <button use:loadThumbnail={[id, file]} class="photo" title="{file}">
+                    
+                </button>
             {/each}
         {:catch err}
             {err}
@@ -77,6 +81,31 @@
     
     .back-btn svg {
         width: 90%;
+    }
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+        padding: 10px;
+        
+        overflow-x: auto;
+
+        flex: 1 1 auto;
+        height: 0px;
+    }
+
+    .photo {
+
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+
+        border: none;
+        padding: 0;
+        aspect-ratio: 1;
+        background-color: rgb(30, 30, 30);
+
     }
 
 </style>
